@@ -1,0 +1,97 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>CU%27sKitchen</AssemblyName>
+    <RootNamespace>CU_sKitchen</RootNamespace>
+    <LangVersion>9.0</LangVersion>
+    <Version>1.0.0</Version>
+    <Platforms>AnyCPU</Platforms>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Sprites\Apple.png" />
+    <None Remove="Sprites\ApplePie.png" />
+    <None Remove="Sprites\AppleSlice.png" />
+    <None Remove="Sprites\AppleTree.png" />
+    <None Remove="Sprites\Knife.png" />
+    <None Remove="Sprites\Microwave.png" />
+    <None Remove="Sprites\Oven.png" />
+    <None Remove="Sprites\Pepper.png" />
+    <None Remove="Sprites\PepperPlant.png" />
+    <None Remove="Sprites\Tomato.png" />
+    <None Remove="Sprites\TomatoPlant.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Sprites\Apple.png" />
+    <EmbeddedResource Include="Sprites\ApplePie.png" />
+    <EmbeddedResource Include="Sprites\AppleTree.png" />
+    <EmbeddedResource Include="Sprites\Microwave.png" />
+    <EmbeddedResource Include="Sprites\Oven.png" />
+    <EmbeddedResource Include="Sprites\Pepper.png" />
+    <EmbeddedResource Include="Sprites\PepperPlant.png" />
+    <EmbeddedResource Include="Sprites\Tomato.png" />
+    <EmbeddedResource Include="Sprites\TomatoPlant.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Casualties Unknown Demo\BepInEx\core\0Harmony.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Casualties Unknown Demo\CasualtiesUnknown_Data\Managed\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    
+    <Reference Include="BepInEx">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Casualties Unknown Demo\BepInEx\core\BepInEx.dll</HintPath>
+    </Reference>
+    
+    <Reference Include="CasualtiesExtra">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Casualties Unknown Demo\BepInEx\plugins\CasualtiesExtra.dll</HintPath>
+    </Reference>
+    <Reference Include="CUCoreLib">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Casualties Unknown Demo\BepInEx\plugins\CUCoreLib.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Timeline">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Casualties Unknown Demo\CasualtiesUnknown_Data\Managed\Unity.Timeline.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Casualties Unknown Demo\CasualtiesUnknown_Data\Managed\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Casualties Unknown Demo\CasualtiesUnknown_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Casualties Unknown Demo\CasualtiesUnknown_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Casualties Unknown Demo\CasualtiesUnknown_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Casualties Unknown Demo\CasualtiesUnknown_Data\Managed\UnityEngine.UI.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
