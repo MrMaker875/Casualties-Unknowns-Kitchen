@@ -1,7 +1,5 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
-using CasualtiesExtra;
-using CasualtiesExtra.UIScripts;
 using CUCoreLib.Data;
 // Used for CUCoreLib features. Remove if you don't use any of said features :)
 using CUCoreLib.Helpers;
@@ -24,6 +22,10 @@ namespace CU_sKitchen
 {
     public class CustomItemPatch
     {
+
+        // Sorry, taking over~
+
+
         //Sprite appleSprite = AssetLoader.LoadEmbeddedSprite("Sprites.Apple.png");
 
         //public void Awake()

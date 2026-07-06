@@ -1,17 +1,16 @@
-﻿using BepInEx;
+using BepInEx;
 using BepInEx.Logging;
-using CasualtiesExtra;
-using CasualtiesExtra.UIScripts;
+using CUCoreLib.ContentReload;
 using CUCoreLib.Data;
 // Used for CUCoreLib features. Remove if you don't use any of said features :)
 using CUCoreLib.Helpers;
 using CUCoreLib.Registries;
 using CUCoreLib.Saving;
 using HarmonyLib;
-using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -25,7 +24,7 @@ namespace CU_sKitchen
 {
     [BepInPlugin(ModGUID, ModName, ModVersion)]
     [BepInDependency("net.cucorelib", BepInDependency.DependencyFlags.HardDependency)]
-    public class Plugin : BaseUnityPlugin
+    public partial class Plugin : BaseUnityPlugin
     {
         public const string ModGUID = "com.MrMaker.CUsKitchen";
         public const string ModName = "Casualties Unknown's Kitchen";
@@ -35,30 +34,6 @@ namespace CU_sKitchen
         private readonly Harmony _harmony = new(ModGUID);
         public static Plugin Instance { get; private set; } = null!;
 
-        Sprite appleSprite = AssetLoader.LoadEmbeddedSprite("Sprites.Apple.png");
-        //Sprite appleSliceSprite = AssetLoader.LoadSpriteFromPluginFolder(Instance, "Casualties Unknown's Kitchen/Sprites/AppleSlice.png");
-        Sprite appleTreeSprite = AssetLoader.LoadEmbeddedSprite("Sprites.AppleTree.png");
-        Sprite applePieSprite = AssetLoader.LoadEmbeddedSprite("Sprites.ApplePie.png");
-        //Sprite knifeSprite = AssetLoader.LoadSpriteFromPluginFolder(Instance, "Casualties Unknown's Kitchen/Sprites/Knife.png");
-        Sprite ovenSprite = AssetLoader.LoadEmbeddedSprite("Sprites.Oven.png");
-        Sprite microwaveSprite = AssetLoader.LoadEmbeddedSprite("Sprites.Microwave.png");
-        Sprite pepperSprite = AssetLoader.LoadEmbeddedSprite("Sprites.Pepper.png");
-        Sprite pepperPlantSprite = AssetLoader.LoadEmbeddedSprite("Sprites.PepperPlant.png");
-        Sprite tomatoSprite = AssetLoader.LoadEmbeddedSprite("Sprites.Tomato.png");
-        Sprite tomatoPlantSprite = AssetLoader.LoadEmbeddedSprite("Sprites.TomatoPlant.png");
-
-        //Sprite appleSprite = AssetLoader.LoadSpriteFromPluginFolder(Instance, "Casualties Unknown's Kitchen/Sprites/Apple.png");
-        ////Sprite appleSliceSprite = AssetLoader.LoadSpriteFromPluginFolder(Instance, "Casualties Unknown's Kitchen/Sprites/AppleSlice.png");
-        //Sprite appleTreeSprite = AssetLoader.LoadSpriteFromPluginFolder(Instance, "Casualties Unknown's Kitchen/Sprites/AppleTree.png");
-        //Sprite applePieSprite = AssetLoader.LoadSpriteFromPluginFolder(Instance, "Casualties Unknown's Kitchen/Sprites/ApplePie.png");
-        ////Sprite knifeSprite = AssetLoader.LoadSpriteFromPluginFolder(Instance, "Casualties Unknown's Kitchen/Sprites/Knife.png");
-        //Sprite ovenSprite = AssetLoader.LoadSpriteFromPluginFolder(Instance, "Casualties Unknown's Kitchen/Sprites/Oven.png");
-        //Sprite microwaveSprite = AssetLoader.LoadSpriteFromPluginFolder(Instance, "Casualties Unknown's Kitchen/Sprites/Microwave.png");
-        //Sprite pepperSprite = AssetLoader.LoadSpriteFromPluginFolder(Instance, "Casualties Unknown's Kitchen/Sprites/Pepper.png");
-        //Sprite pepperPlantSprite = AssetLoader.LoadSpriteFromPluginFolder(Instance, "Casualties Unknown's Kitchen/Sprites/PepperPlant.png");
-        //Sprite tomatoSprite = AssetLoader.LoadSpriteFromPluginFolder(Instance, "Casualties Unknown's Kitchen/Sprites/Tomato.png");
-        //Sprite tomatoPlantSprite = AssetLoader.LoadSpriteFromPluginFolder(Instance, "Casualties Unknown's Kitchen/Sprites/TomatoPlant.png");
-
         public void Awake()
         {
             Logger = base.Logger;
@@ -67,22 +42,13 @@ namespace CU_sKitchen
             _harmony.PatchAll();
             Logger.LogInfo($"Plugin {ModName} is loaded!");
 
+            ContentReloadManager.EnableHotReload(ModGUID);
             CustomItems();
+            KitchenCookingSystem.RegisterCookwareItems();
             CustomLiquids();
             CustomBuildings();
             CustomRecipes();
-
-            if (appleSprite == null) appleSprite = AssetLoader.LoadEmbeddedSprite("Sprites.Apple.png");
-            //if (appleSliceSprite == null) appleSliceSprite = AssetLoader.LoadEmbeddedSprite("Sprites.AppleSlice.png");
-            if (appleTreeSprite == null) appleTreeSprite = AssetLoader.LoadEmbeddedSprite("Sprites.AppleTree.png");
-            if (applePieSprite == null) applePieSprite = AssetLoader.LoadEmbeddedSprite("Sprites.ApplePie.png");
-            //if (knifeSprite == null) knifeSprite = AssetLoader.LoadEmbeddedSprite("Sprites.Knife.png");
-            if (ovenSprite == null) ovenSprite = AssetLoader.LoadEmbeddedSprite("Sprites.Oven.png");
-            if (microwaveSprite == null) microwaveSprite = AssetLoader.LoadEmbeddedSprite("Sprites.Microwave.png");
-            if (pepperSprite == null) pepperSprite = AssetLoader.LoadEmbeddedSprite("Sprites.Pepper.png");
-            if (pepperPlantSprite == null) pepperPlantSprite = AssetLoader.LoadEmbeddedSprite("Sprites.PepperPlant.png");
-            if (tomatoSprite == null) tomatoSprite = AssetLoader.LoadEmbeddedSprite("Sprites.Tomato.png");
-            if (tomatoPlantSprite == null) tomatoPlantSprite = AssetLoader.LoadEmbeddedSprite("Sprites.TomatoPlant.png");
+            KitchenCookingSystem.Initialize();
         }
 
         //ItemInfo closestItem = new RecipeItem(0.5f) { quality = new CraftingQuality("") }
@@ -93,7 +59,7 @@ namespace CU_sKitchen
             {
                 Name = "Apple Tree",
                 Description = "A tall tree that seems to bear some sort of red fruit",
-                Sprite = appleTreeSprite,
+                Sprite = AssetLoader.LoadEmbeddedSprite("Sprites.AppleTree.png"),
                 Health = 400f,
                 HitSoundReferenceId = "rustle",
                 Placement = BuildingPlacementType.Floor,
@@ -116,7 +82,7 @@ namespace CU_sKitchen
             {
                 Name = "Capsicum Shrub",
                 Description = "A small but healthy shrub, what grows on it are thin red fruit. Are they edible?",
-                Sprite = pepperPlantSprite,
+                Sprite = AssetLoader.LoadEmbeddedSprite("Sprites.PepperPlant.png"),
                 Health = 200f,
                 HitSoundReferenceId = "rustle",
                 Placement = BuildingPlacementType.Floor,
@@ -139,7 +105,7 @@ namespace CU_sKitchen
             {
                 Name = "Tomato Bush",
                 Description = "A round green bush, houses red circular fruits",
-                Sprite = tomatoPlantSprite,
+                Sprite = AssetLoader.LoadEmbeddedSprite("Sprites.TomatoPlant.png"),
                 Health = 250f,
                 HitSoundReferenceId = "rustle",
                 Placement = BuildingPlacementType.Floor,
@@ -162,7 +128,7 @@ namespace CU_sKitchen
             //{
             //    Name = "Oven",
             //    Description = "A moderately large and sturdy machine that has enclosure inside that acts as a heatsource to cook various foods",
-            //    Sprite = ovenSprite,
+            //    Sprite = AssetLoader.LoadEmbeddedSprite("Sprites.Oven.png"),
             //    Health = 800f,
             //    HitSoundReferenceId = "metal",
             //    Placement = BuildingPlacementType.Floor,
@@ -179,192 +145,6 @@ namespace CU_sKitchen
             //        BuildingEntityRegistry.AddDrop("scrapmetal")
             //    },
             //});
-        }
-
-        public void CustomItems()
-        {
-            ItemRegistry.Register("apple", new ItemInfo
-            {
-                fullName = "Apple",
-                description = "A red apple, sweet and healthy to eat",
-                category = "food",
-                weight = 0.5f,
-                value = 2,
-                usable = true,
-                decayMinutes = 30f,
-                scaleWeightWithCondition = true,
-                tags = "fruit" + "cangetwet" + "sliceable",
-                rec = new Recognition(2),
-                useAction = (body, item) =>
-                {
-                    body.Eat(5f, 0.2f);
-                    body.Drink(1f);
-                    body.happiness += 0.25f;
-                    item.condition -= 1f;
-                },
-                qualities = new List<CraftingQuality>
-                {
-                    new CraftingQuality("produce"),
-                    new CraftingQuality("sliceable")
-                },
-            }, appleSprite);
-            ItemRegistry.Register("applepie", new ItemInfo
-            {
-                fullName = "Apple Pie",
-                description = "A delicous and filling pie made with apples",
-                category = "food",
-                weight = 1.5f,
-                value = 15,
-                usable = true,
-                decayMinutes = 90f,
-                scaleWeightWithCondition = true,
-                tags = "cangetwet",
-                rec = new Recognition(4),
-                useAction= (body, item) =>
-                {
-                    body.Eat(7f, 0.6f);
-                    body.happiness += 0.75f;
-                    body.talker.EatGood();
-                    item.condition -= 0.125f;
-                },
-            }, applePieSprite);
-            ItemRegistry.Register("oven", new ItemInfo
-            {
-                fullName = "Oven",
-                description = "A large metalic box that has heated inside, used to cook food",
-                category = "custom",
-                weight = 20f,
-                value = 40,
-                usable = false,
-                rec = new Recognition(10),
-                qualities = new List<CraftingQuality>
-                {
-                    new CraftingQuality("heatsource", 30)
-                }
-            }, ovenSprite);
-            ItemRegistry.Register("microwave", new CustomItemInfo
-            {
-                fullName = "Microwave",
-                description = "A compact metalic box that is capable of heating up and cooking food",
-                category = "utility",
-                weight = 2f,
-                value = 30,
-                usable = false,
-                tags = "battery",
-                rec = new Recognition(9),
-                Battery = new BatteryProperties
-                {
-                    MaxCharge = 100f,
-                    StartCharge = 100f,
-                    Preset = BatteryItem.BatteryPreset.Large,
-                    BatteryType = "largebattery"
-                },
-                qualities = new List<CraftingQuality>
-                {
-                    new CraftingQuality("heatsource", 15)
-                }
-            }, microwaveSprite);
-            ItemRegistry.Register("pepper", new ItemInfo
-            {
-                fullName = "Pepper",
-                description = "A red thin fruit, eating might bring discomfort",
-                category = "food",
-                weight = 0.4f,
-                value = 4,
-                usable = true,
-                decayMinutes = 20f,
-                scaleWeightWithCondition = true,
-                tags = "fruit" + "cangetwet",
-                rec = new Recognition(4),
-                useAction = (body, item) =>
-                {
-                    body.Eat(9f, 0.4f);
-                    body.Drink(-4f);
-                    body.happiness -= 0.25f;
-                    body.limbs[0].pain += 8f;
-                    if (body.temperature < 40f)
-                    {
-                        body.temperature += 1f;
-                    }
-                    item.condition -= 1f;
-                },
-                qualities = new List<CraftingQuality>
-                {
-                    new CraftingQuality("produce"),
-                },
-            }, pepperSprite);
-            ItemRegistry.Register("tomato", new ItemInfo
-            {
-                fullName = "Tomato",
-                description = "A soft red fruit, a little sickening if eaten too much",
-                category = "food",
-                weight = 0.4f,
-                value = 3,
-                usable = true,
-                decayMinutes = 40f,
-                scaleWeightWithCondition = true,
-                tags = "fruit" + "cangetwet",
-                rec = new Recognition(3),
-                useAction = (body, item) =>
-                {
-                    body.Eat(4f, 0.2f);
-                    body.Drink(3f);
-                    body.sicknessAmount += 1f;
-                    item.condition -= 0.5f;
-                },
-                qualities = new List<CraftingQuality>
-                {
-                    new CraftingQuality("produce"),
-                },
-            }, tomatoSprite);
-            //ItemRegistry.Register("appleslice", new ItemInfo
-            //{
-            //    fullName = "Apple Slice",
-            //    description = "A simple slice of apple, small and light but not very filling",
-            //    category = "food",
-            //    weight = 0.125f,
-            //    value = 1,
-            //    usable = true,
-            //    decayMinutes = 10,
-            //    scaleWeightWithCondition = true,
-            //    tags = "fruit" + "cangetwet",
-            //    rec = new Recognition(2),
-            //    useAction = (body, item) =>
-            //    {
-            //        body.Eat(1.5f, 0.05f);
-            //        body.Drink(0.25f);
-            //        body.happiness += 0.1f;
-            //        item.condition -= 1f;
-            //    },
-            //}, appleSliceSprite);
-            //ItemRegistry.Register("knife", new ItemInfo
-            //{
-            //    fullName = "Kitchen Knife",
-            //    description = "A sturdy knife, often used to slice food into pieces",
-            //    weight = 0.8f,
-            //    value = 8,
-            //    usable = true,
-            //    tags = "tool" + "belttool",
-            //    rec = new Recognition(6),
-            //    useAction = (body, item) =>
-            //    {
-            //        Item helditem = PlayerCamera.main.body.GetItem(PlayerCamera.main.body.handSlot);
-            //        if (helditem.tag == "sliceable")
-            //        {
-
-            //            string itemid;
-            //            itemid = helditem.id;
-            //            item.condition -= 1f;
-            //            body.PickUpItem(Item.GetItem("applepie"), body.DropItem(1), force = false);
-            //            //Utils.Create(itemid + "slice", PlayerCamera.main.body.transform.position, 0f).GetComponent<Item>();
-            //        }
-            //        else return;
-            //    },
-            //    qualities = new List<CraftingQuality>
-            //    {
-            //        new CraftingQuality("cutting", 16),
-            //    },
-            //}, knifeSprite);
         }
 
         public void CustomLiquids()
@@ -614,6 +394,411 @@ namespace CU_sKitchen
                 category = Recipes.RecipeCategory.Food,
                 result = new RecipeResult
                 {
+                    id = "breadcrumbs",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.2f) { specific = true, specificId = "bread" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("cutting", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 5,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "candiedgeofruit",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.5f) { specific = true, specificId = "geofruit" },
+                    new RecipeItem(100f) { specific = true, specificId = "sap", isLiquid = true, destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 5,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "fruitglaze",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.5f) { specific = true, specificId = "geofruit" },
+                    new RecipeItem(100f) { specific = true, specificId = "applejuice", isLiquid = true, destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 6,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "frieddough",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0f) { quality = new CraftingQuality("flour", 1f) },
+                    new RecipeItem(0f) { quality = new CraftingQuality("water", 100f), isLiquid = true, destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("fat", 25f), isLiquid = true, destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 6,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "friedmeat",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.2f) { quality = new CraftingQuality("meat") },
+                    new RecipeItem(0f) { quality = new CraftingQuality("fat", 25f), isLiquid = true, destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 6,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "searedmushpear",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.5f) { specific = true, specificId = "mushpear" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 6,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "searedmushtail",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.5f) { specific = true, specificId = "mushtail" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 6,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "rosetea",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.5f) { specific = true, specificId = "rosepod" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("water", 150f), isLiquid = true, destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.25f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 6,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "pilk",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(250f) { specific = true, specificId = "milk", isLiquid = true, destroyItem = false },
+                    new RecipeItem(125f) { specific = true, specificId = "sodacan", isLiquid = true, destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 7,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "vegetablebroth",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.5f) { specific = true, specificId = "tomato" },
+                    new RecipeItem(0.5f) { specific = true, specificId = "corn" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("water", 200f), isLiquid = true, destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 7,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "wastelandsalad",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.5f) { specific = true, specificId = "popfruit" },
+                    new RecipeItem(0.5f) { specific = true, specificId = "stonefruitopen" },
+                    new RecipeItem(0.5f) { specific = true, specificId = "helluce" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("cutting", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 7,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "meatstock",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.2f) { quality = new CraftingQuality("meat") },
+                    new RecipeItem(0f) { quality = new CraftingQuality("water", 200f), isLiquid = true, destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 7,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "organbroth",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.5f) { specific = true, specificId = "internalorgans" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("water", 200f), isLiquid = true, destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 7,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "lumalgaebroth",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.5f) { specific = true, specificId = "glowplantfruit" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("lumalgae", 200f), isLiquid = true, destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 7,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "fleshwrappedcactus",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.5f) { specific = true, specificId = "cactusflesh" },
+                    new RecipeItem(0.2f) { quality = new CraftingQuality("meat") },
+                    new RecipeItem(0f) { quality = new CraftingQuality("cutting", 0.5f), destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.25f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 8,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "blobfleshscone",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.5f) { specific = true, specificId = "blobflesh" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("flour", 1f) },
+                    new RecipeItem(0f) { quality = new CraftingQuality("water", 100f), isLiquid = true, destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 8,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "bloodnoodles",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0f) { quality = new CraftingQuality("flour", 1f) },
+                    new RecipeItem(0f) { quality = new CraftingQuality("blood", 50f), isLiquid = true, destroyItem = false },
+                    new RecipeItem(0.2f) { quality = new CraftingQuality("meat") },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.5f), destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("cutting", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 8,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "cremeofmushroomsoup",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.5f) { specific = true, specificId = "browncap" },
+                    new RecipeItem(0.5f) { specific = true, specificId = "mushpear" },
+                    new RecipeItem(150f) { specific = true, specificId = "milk", isLiquid = true, destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("water", 100f), isLiquid = true, destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 8,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "sauteedmeat",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.2f) { quality = new CraftingQuality("meat") },
+                    new RecipeItem(0.5f) { specific = true, specificId = "garlic" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("fat", 25f), isLiquid = true, destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 8,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "pileofjunkfood",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.2f) { specific = true, specificId = "cookies" },
+                    new RecipeItem(0.2f) { specific = true, specificId = "chips" },
+                    new RecipeItem(0.2f) { specific = true, specificId = "candybar" }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 9,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "shepardspie",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.2f) { quality = new CraftingQuality("meat") },
+                    new RecipeItem(0.5f) { specific = true, specificId = "turnip" },
+                    new RecipeItem(0.5f) { specific = true, specificId = "squash" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("flour", 1f) },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.75f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 9,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "stuffedgeigefruitbun",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.2f) { specific = true, specificId = "bread" },
+                    new RecipeItem(0.5f) { specific = true, specificId = "popfruit" },
+                    new RecipeItem(0.5f) { specific = true, specificId = "fruitglaze" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.5f), destroyItem = false }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 4,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
                     id = "geojam",
                     amount = 1,
                     isLiquid = true,
@@ -827,6 +1012,77 @@ namespace CU_sKitchen
                     new RecipeItem(500f) { specific = true, specificId = "milk", isLiquid = true ,destroyItem = false},
                 }
             });
+
+            // Custom Cookery 
+
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 9,
+                category = Recipes.RecipeCategory.Utilities,
+                result = new RecipeResult
+                {
+                    id = "skillet",
+                    amount = 1,
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.9f) { specific = true, specificId = "scrappanel" },
+                    new RecipeItem(0.5f) { specific = true, specificId = "scrappanel" },
+                    new RecipeItem(0.9f) { specific = true, specificId = "stick" },
+                    new RecipeItem(0.9f) { specific = true, specificId = "nails" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("hammering", 5f), destroyItem = false },
+                    new RecipeItem(20f) { specific = true, specificId = "biochem", isLiquid = true ,destroyItem = false},
+                }
+            });
+
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 10,
+                category = Recipes.RecipeCategory.Utilities,
+                result = new RecipeResult
+                {
+                    id = "portableoven",
+                    amount = 1,
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0f) { specific = true, specificId = "lightbulb" },
+                    new RecipeItem(0f) { specific = true, specificId = "processedcopper" },
+                    new RecipeItem(0f) { specific = true, specificId = "flexiglass" },
+                    new RecipeItem(0f) { specific = true, specificId = "circuitboard" },
+                    new RecipeItem(0.5f) { specific = true, specificId = "scrappanel" },
+                    new RecipeItem(0.5f) { specific = true, specificId = "scrappanel" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("hammering", 5f), destroyItem = false },
+                    new RecipeItem(0f) { quality = new CraftingQuality("cutting", 5f), destroyItem = false },
+                    new RecipeItem(20f) { specific = true, specificId = "biochem", isLiquid = true ,destroyItem = false},
+                }
+            });
+
+
+            RecipeRegistry.Register(new Recipe
+            {
+                INT = 9,
+                category = Recipes.RecipeCategory.Utilities,
+                result = new RecipeResult
+                {
+                    id = "pot",
+                    amount = 1,
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0.9f) { specific = true, specificId = "scraptube" },
+                    new RecipeItem(0.5f) { specific = true, specificId = "woodpanel" },
+                    new RecipeItem(0.9f) { specific = true, specificId = "plasticchunk" },
+                    new RecipeItem() { specific = true, specificId = "rope" },
+                    new RecipeItem(0.5f) { specific = true, specificId = "rawcopper" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("cutting", 5f), destroyItem = false },
+                    new RecipeItem(20f) { specific = true, specificId = "biochem", isLiquid = true ,destroyItem = false},
+                }
+            });
+
+
+
+
             //RecipeRegistry.Register(new Recipe
             //{
             //    INT = 0,
