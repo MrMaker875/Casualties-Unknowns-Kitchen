@@ -124,6 +124,7 @@ namespace CU_sKitchen
                     BuildingEntityRegistry.AddDrop("tomato", 0.5f, 0.4f, 0.1f),
                 }
             });
+            RegisterProduceBuildingEntities();
             //BuildingEntityRegistry.Register("oven", new CustomBuildingEntityDefinition
             //{
             //    Name = "Oven",

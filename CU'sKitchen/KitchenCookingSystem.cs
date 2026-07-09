@@ -41,13 +41,14 @@ namespace CU_sKitchen
          * 
          * I love dynamic cooking !!!
          */
-        private const int IngredientTagScore = 6;
-        private const int FlavorTagScore = 3;
-        private const int VisualTagScore = 2;
-        private const int MethodTagScore = 4;
-        private const int LowerScoreWindow = 3;
+        private const float IngredientTagScore = 6f;
+        private const float FlavorTagScore = 3f;
+        private const float VisualTagScore = 2f;
+        private const float MethodTagScore = 1f;
+        private const float LowerScoreWindow = 3f;
         private const float BestDishChance = 0.7f;
         private const float MinimumLiquidCookAmount = 25f;
+        private const float ScoreEqualityTolerance = 0.001f;
 
         // TODO make this dynamic based on existance of onUse delegate
         private static readonly HashSet<string> NonFoodCustomIds = new(StringComparer.OrdinalIgnoreCase)
@@ -76,7 +77,6 @@ namespace CU_sKitchen
                 ["sap"] = new CookingTagProfile(new[] { "sweetener" }, new[] { "sweet" }, new[] { "yellow", "orange", "brown" }),
             };
 
-        // TODO divide by total tags so weightings are equal within the category
         private static readonly Dictionary<string, DishSeed> DishSeeds =
             new(StringComparer.OrdinalIgnoreCase) // This is for ONLY vanilla items, go edit the customData field for custom items instead :evil:
             // I guess it works for modded items, but please do ^
@@ -224,7 +224,7 @@ namespace CU_sKitchen
             ItemRegistry.Register("skillet", new CustomItemInfo
             {
                 fullName = "Skillet",
-                description = "A shallow pan, for frying and sautéing ingredients. <br><color=orange>Drag 3 or more ingredients and use to cook food.</color>",
+                description = "A shallow pan, for frying and sautÃ©ing ingredients. <br><color=orange>Drag 3 or more ingredients and use to cook food.</color>",
                 category = "container",
                 usable = true,
                 usableOnLimb = false,
@@ -536,7 +536,7 @@ namespace CU_sKitchen
             return profile.HasAnyTags;
         }
 
-        private static IReadOnlyList<CookingDishDefinition> GetRegisteredDishDefinitions(CookingStationType station)
+        private static IReadOnlyList<CookingDishDefinition> GetRegisteredDishDefinitions()
         {
             List<CookingDishDefinition> result = new();
 
@@ -548,8 +548,7 @@ namespace CU_sKitchen
                 if (!TryReadDishDefinition(id, info.CustomData, out CookingDishDefinition definition))
                     continue;
 
-                if (definition.Supports(station))
-                    result.Add(definition);
+                result.Add(definition);
             }
 
             if (Item.GlobalItems != null)
@@ -561,8 +560,6 @@ namespace CU_sKitchen
 
                     if (ItemRegistry.TryGetCustomInfo(id, out _)) continue;
                     if (!Item.GlobalItems.ContainsKey(id)) continue;
-                    if (!seed.Stations.Contains(station)) continue;
-
                     result.Add(new CookingDishDefinition
                     {
                         ResultId = id,
@@ -725,7 +722,7 @@ namespace CU_sKitchen
                 return;
             }
 
-            List<CookingDishScore> scoredDishes = GetRegisteredDishDefinitions(station)
+            List<CookingDishScore> scoredDishes = GetRegisteredDishDefinitions()
                 .Select(dish => new CookingDishScore
                 {
                     Dish = dish,
@@ -757,17 +754,25 @@ namespace CU_sKitchen
             PlayerCamera.main.PlayUISound(PlayerCamera.UISoundType.Click);
         }
 
-        private static int ScoreDish(CookingDishDefinition dish, IEnumerable<CookingInput> inputs, CookingStationType station)
+        private static float ScoreDish(CookingDishDefinition dish, IEnumerable<CookingInput> inputs, CookingStationType station)
         {
-            int total = 0;
+            HashSet<string> ingredientTags = new(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> flavorTags = new(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> visualTags = new(StringComparer.OrdinalIgnoreCase);
+
             foreach (CookingInput input in inputs)
             {
                 if (input?.Profile == null) continue;
 
-                total += CountMatches(input.Profile.IngredientTags, dish.Profile.IngredientTags) * IngredientTagScore;
-                total += CountMatches(input.Profile.FlavorTags, dish.Profile.FlavorTags) * FlavorTagScore;
-                total += CountMatches(input.Profile.VisualTags, dish.Profile.VisualTags) * VisualTagScore;
+                ingredientTags.UnionWith(input.Profile.IngredientTags);
+                flavorTags.UnionWith(input.Profile.FlavorTags);
+                visualTags.UnionWith(input.Profile.VisualTags);
             }
+
+            float total = 0f;
+            total += ScoreTagCategory(ingredientTags, dish.Profile.IngredientTags, IngredientTagScore);
+            total += ScoreTagCategory(flavorTags, dish.Profile.FlavorTags, FlavorTagScore);
+            total += ScoreTagCategory(visualTags, dish.Profile.VisualTags, VisualTagScore);
 
             if (dish.MethodTags != null && dish.MethodTags.Contains(ToMethodTag(station), StringComparer.OrdinalIgnoreCase))
                 total += MethodTagScore;
@@ -775,10 +780,10 @@ namespace CU_sKitchen
             return total;
         }
 
-        private static int CountMatches(HashSet<string> sourceTags, HashSet<string> targetTags)
+        private static float ScoreTagCategory(HashSet<string> sourceTags, HashSet<string> targetTags, float categoryWeight)
         {
             if (sourceTags == null || targetTags == null || sourceTags.Count == 0 || targetTags.Count == 0)
-                return 0;
+                return 0f;
 
             int matches = 0;
             foreach (string tag in sourceTags)
@@ -787,18 +792,25 @@ namespace CU_sKitchen
                     matches++;
             }
 
-            return matches;
+            if (matches == 0)
+                return 0f;
+
+            int unionCount = sourceTags.Count + targetTags.Count - matches;
+            if (unionCount <= 0)
+                return 0f;
+
+            return (matches / (float)unionCount) * categoryWeight;
         }
 
         private static CookingDishDefinition SelectDish(List<CookingDishScore> scoredDishes)
         {
-            int bestScore = scoredDishes[0].Score;
+            float bestScore = scoredDishes[0].Score;
             List<CookingDishScore> bestMatches = scoredDishes
-                .Where(result => result.Score == bestScore)
+                .Where(result => Mathf.Abs(result.Score - bestScore) <= ScoreEqualityTolerance)
                 .ToList();
 
             List<CookingDishScore> lowerMatches = scoredDishes
-                .Where(result => result.Score < bestScore && result.Score >= bestScore - LowerScoreWindow)
+                .Where(result => result.Score < bestScore - ScoreEqualityTolerance && result.Score >= bestScore - LowerScoreWindow)
                 .ToList();
 
             if (lowerMatches.Count == 0 || UnityEngine.Random.value <= BestDishChance)
@@ -880,7 +892,7 @@ namespace CU_sKitchen
         private sealed class CookingDishScore
         {
             public CookingDishDefinition Dish { get; set; } = null!;
-            public int Score { get; set; }
+            public float Score { get; set; }
         }
 
         private sealed class DishSeed

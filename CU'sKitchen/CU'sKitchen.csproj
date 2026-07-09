@@ -31,11 +31,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Sprites\*.png" />
+    <None Remove="Sprites\**\*.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Sprites\*.png" />
+    <EmbeddedResource Include="Sprites\**\*.png" />
   </ItemGroup>
 
   <ItemGroup>
