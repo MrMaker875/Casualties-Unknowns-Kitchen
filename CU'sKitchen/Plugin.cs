@@ -408,6 +408,26 @@ namespace CU_sKitchen
             });
             RecipeRegistry.Register(new Recipe
             {
+                INT = 9,
+                category = Recipes.RecipeCategory.Food,
+                result = new RecipeResult
+                {
+                    id = "bloodsausage",
+                    amount = 1,
+                    isLiquid = false,
+                    resultCondition = 1f
+                },
+                items = new List<RecipeItem>
+                {
+                    new RecipeItem(0f) { specific = true, specificId = "string" },
+                    new RecipeItem(0.9f) { specific = true, specificId = "internalorgans" },
+                    new RecipeItem(0f) { quality = new CraftingQuality("blood", 25f), isLiquid = true },
+                    new RecipeItem(0f) { quality = new CraftingQuality("fat", 25f), isLiquid = true },
+                    new RecipeItem(0f) { quality = new CraftingQuality("heatsource", 0.1f) }
+                },
+            });
+            RecipeRegistry.Register(new Recipe
+            {
                 INT = 5,
                 category = Recipes.RecipeCategory.Food,
                 result = new RecipeResult
@@ -1066,7 +1086,7 @@ namespace CU_sKitchen
                 category = Recipes.RecipeCategory.Utilities,
                 result = new RecipeResult
                 {
-                    id = "pot",
+                    id = "cookingpot",
                     amount = 1,
                 },
                 items = new List<RecipeItem>

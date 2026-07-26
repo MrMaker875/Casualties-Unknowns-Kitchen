@@ -157,6 +157,31 @@ namespace CU_sKitchen
                 rec = new Recognition(2)
             }, AssetLoader.LoadEmbeddedSprite("Sprites.Bamboo.png"));
 
+            ItemRegistry.Register("bloodsausage", new ItemInfo
+            {
+                fullName = "Blood Sausage",
+                description = "A dark sausage made by filling empty intestines with meat and blood, cooked over oil. Sickening in excess, but really fatty and filling.",
+                category = "custom",
+                slotRotation = 45,
+                usable = true,
+                usableOnLimb = false,
+                decayMinutes = 45f,
+                destroyAtZeroCondition = true,
+                weight = 2.5f,
+                scaleWeightWithCondition = true,
+                value = 8,
+                tags = "cangetwet",
+                rec = new Recognition(9),
+                useAction = (body, item) =>
+                {
+                    body.Eat(13f, 1.2f);
+                    body.sicknessAmount += 8f;
+                    body.talker.EatBad();
+                    item.condition -= 0.25f;
+                },
+                qualities = new List<CraftingQuality> { new CraftingQuality("meat", 3f) }
+            }, AssetLoader.LoadEmbeddedSprite("Sprite.BloodSausage"));
+
             ItemRegistry.Register("beansprout", new ItemInfo
             {
                 fullName = "Bean Sprout",
